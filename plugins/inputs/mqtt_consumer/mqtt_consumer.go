@@ -284,8 +284,23 @@ func (m *MQTTConsumer) onMessage(acc telegraf.TrackingAccumulator, msg mqtt.Mess
 
 	if m.topicTag != "" {
 		topic := msg.Topic()
-		for _, metric := range metrics {
-			metric.AddTag(m.topicTag, topic)
+		split := strings.Split(msg.Topic(), "/")
+		if len(split) > 3 {
+			system := split[0]
+			identifier := split[1]
+			subsystem := split[2]
+			for _, metric := range metrics {
+				if subsystem == "ubx" {
+					metric.AddTag("class", split[3])
+					metric.AddTag("message", split[4])
+				} else if subsystem == "rtcm" {
+					metric.AddTag("message", split[3])
+				}
+				metric.AddTag(m.topicTag, topic)
+				metric.AddTag("system", system)
+				metric.AddTag("identifier", identifier)
+				metric.AddTag("subsystem", subsystem)
+			}
 		}
 	}
 
